@@ -139,11 +139,11 @@ CWV: rothys AVERAGE 🟡 vs skims FAILED 🔴
 ```
 
 **Shopify Theme QA (compare before/after theme changes):**
-> `/core-web-vitals brandname.com?preview_theme_id=111111, brandname.com?preview_theme_id=222222`
-> or: "Compare CWV before and after theme changes for brandname.com"
+> `/core-web-vitals brandname.myshopify.com?preview_theme_id=111111, brandname.myshopify.com?preview_theme_id=222222`
+> or: "Compare CWV before and after theme changes for brandname.myshopify.com"
 
 ```
-🔍 Shopify Theme QA: brandname.com
+🔍 Shopify Theme QA: brandname.myshopify.com
 
 | Metric       | Before (111111) | After (222222) | Change     |
 |--------------|----------------|----------------|------------|
