@@ -32,7 +32,9 @@ Audit website performance using Google's Core Web Vitals (CrUX field data) and P
 4. Go to **APIs & Services → Credentials → Create Credentials → API Key**
 5. Set as environment variable: `export GOOGLE_PAGESPEED_API_TOKEN=your_key_here`
 
-### 2. Google Sheets Access (for Sheet mode)
+### 2. Google Sheets Access (only needed for Google Sheet mode)
+
+*Not required for single URL or batch mode — those just need the PageSpeed API key above.*
 
 **Option A: Service Account (recommended for portability)**
 1. In Google Cloud Console, go to **IAM & Admin → Service Accounts**
