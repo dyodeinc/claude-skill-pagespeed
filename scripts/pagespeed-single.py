@@ -39,6 +39,7 @@ def _load_dotenv():
 
 _load_dotenv()
 API_KEY = os.environ.get("GOOGLE_PAGESPEED_API_TOKEN", "")
+TIMEOUT = 120
 
 THRESHOLDS = {
     "lcp":  (2.5, 4.0),
@@ -78,7 +79,7 @@ def fetch(url, strategy):
     )
     try:
         req = urllib.request.Request(api_url)
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
             return json.loads(resp.read())
     except Exception as e:
         return {"error": str(e)}
@@ -176,26 +177,40 @@ def main():
     parser = argparse.ArgumentParser(description="PageSpeed Insights CWV audit")
     parser.add_argument("urls", nargs="+", help="One or more URLs to audit")
     parser.add_argument("--api-key", help="PageSpeed API key (overrides env var)")
+    parser.add_argument("--json", action="store_true", dest="json_output", help="Output raw JSON instead of formatted text")
+    parser.add_argument("--timeout", type=int, default=120, help="API timeout in seconds (default: 120)")
     args = parser.parse_args()
 
-    global API_KEY
+    global API_KEY, TIMEOUT
     if args.api_key:
         API_KEY = args.api_key
     if not API_KEY:
         print("Error: Set GOOGLE_PAGESPEED_API_TOKEN or use --api-key", file=sys.stderr)
         sys.exit(1)
+    TIMEOUT = args.timeout
 
     results = []
+    has_errors = False
     for url in args.urls:
         clean = url.strip().rstrip(",")
         if not clean:
             continue
-        print(f"Fetching {clean}...", file=sys.stderr)
+        print(f"Fetching {clean} (mobile)...", file=sys.stderr)
         mob_raw = fetch(clean, "mobile")
+        print(f"Fetching {clean} (desktop)...", file=sys.stderr)
         desk_raw = fetch(clean, "desktop")
         mob, mob_err = extract(mob_raw) if "error" not in mob_raw else (None, mob_raw["error"])
         desk, desk_err = extract(desk_raw) if "error" not in desk_raw else (None, desk_raw["error"])
+        if not mob and not desk:
+            has_errors = True
         results.append((clean, mob, desk))
+
+    if args.json_output:
+        json_results = []
+        for url, mob, desk in results:
+            json_results.append({"url": url, "mobile": mob, "desktop": desk})
+        print(json.dumps(json_results, indent=2))
+        sys.exit(1 if has_errors else 0)
 
     if len(results) == 1:
         url, mob, desk = results[0]
@@ -204,7 +219,6 @@ def main():
         print_compare(results[0][0], results[0][1], results[0][2],
                       results[1][0], results[1][1], results[1][2])
     else:
-        # Batch
         print(f"\n📊 **Batch CWV Results**\n")
         print(f"| Site | M-LCP | M-CLS | M-INP | M-FCP | M-TTFB | CWV |")
         print(f"|------|-------|-------|-------|-------|--------|-----|")
@@ -218,6 +232,8 @@ def main():
                 print(f"| {' | '.join(row)} |")
             else:
                 print(f"| {url} | ERROR | — | — | — | — | — |")
+
+    sys.exit(1 if has_errors else 0)
 
 if __name__ == "__main__":
     main()

@@ -194,6 +194,18 @@ python3 scripts/pagespeed-retry-browser.py SPREADSHEET_ID --credentials sa.json
 - Bottleneck is Google's Lighthouse analysis time (30-90s per URL per strategy)
 - 1,000 URLs ≈ 6-7 hours
 
+## Roadmap
+
+Future improvements under consideration:
+
+- [ ] **Historical tracking** — Run the same URLs weekly, store results, show trends ("LCP improved 0.3s since last week")
+- [ ] **Lighthouse recommendations** — Parse top 3 actionable audit items (render-blocking resources, image optimization, etc.)
+- [ ] **Threshold alerts** — Flag URLs that crossed from green to yellow/red since last run
+- [ ] **CSV/Markdown export** — Alternative output formats for batch mode beyond Google Sheets
+- [ ] **Progress spinner** — Better visual feedback during long-running API calls
+
+Have an idea? [Open an issue](https://github.com/dyodeinc/claude-skill-pagespeed/issues).
+
 ## License
 
 MIT
