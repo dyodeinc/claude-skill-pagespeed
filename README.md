@@ -105,6 +105,26 @@ Overall: rothys.com wins 6/10 metrics
 CWV: rothys AVERAGE 🟡 vs skims FAILED 🔴
 ```
 
+**Shopify Theme QA (compare before/after theme changes):**
+> `/core-web-vitals brandname.myshopify.com?preview_theme_id=111111, brandname.myshopify.com?preview_theme_id=222222`
+> or: "Compare CWV before and after theme changes for brandname.myshopify.com"
+
+```
+🔍 Shopify Theme QA: brandname.myshopify.com
+
+| Metric       | Before (111111) | After (222222) | Change     |
+|--------------|----------------|----------------|------------|
+| 📱 M-LCP    | 2.1s 🟢       | 2.8s 🟡       | ⚠️ +0.7s  |
+| 📱 M-CLS    | 0.05 🟢       | 0.12 🟡       | ⚠️ +0.07  |
+| 📱 M-INP    | 150ms 🟢      | 145ms 🟢      | 🎉 -5ms   |
+| ...          |                |                |            |
+
+Summary: 2 regressions ⚠️ | 1 improvement 🎉 | 7 unchanged
+🚨 Do not publish — CWV regression detected (LCP crossed green→yellow)
+```
+
+*Why two preview URLs?* Shopify preview themes are inherently slower than the live site due to preview mode overhead. Comparing the live URL against a preview URL would always show false regressions. Instead, compare the **production theme in preview mode** (before) against the **development theme in preview mode** (after) for an apples-to-apples comparison that isolates the actual impact of your code changes.
+
 **Batch (multiple URLs):**
 > `/core-web-vitals dyode.com, rothys.com, allbirds.com`
 > or: "Check CWV for dyode.com, rothys.com, and allbirds.com"
@@ -137,26 +157,6 @@ CWV: rothys AVERAGE 🟡 vs skims FAILED 🔴
   ✅ Complete: 1,247 processed | 42 CrUX field | 1,163 lab | 42 errors
   🔄 Running browser retry on 42 error rows...
 ```
-
-**Shopify Theme QA (compare before/after theme changes):**
-> `/core-web-vitals brandname.myshopify.com?preview_theme_id=111111, brandname.myshopify.com?preview_theme_id=222222`
-> or: "Compare CWV before and after theme changes for brandname.myshopify.com"
-
-```
-🔍 Shopify Theme QA: brandname.myshopify.com
-
-| Metric       | Before (111111) | After (222222) | Change     |
-|--------------|----------------|----------------|------------|
-| 📱 M-LCP    | 2.1s 🟢       | 2.8s 🟡       | ⚠️ +0.7s  |
-| 📱 M-CLS    | 0.05 🟢       | 0.12 🟡       | ⚠️ +0.07  |
-| 📱 M-INP    | 150ms 🟢      | 145ms 🟢      | 🎉 -5ms   |
-| ...          |                |                |            |
-
-Summary: 2 regressions ⚠️ | 1 improvement 🎉 | 7 unchanged
-🚨 Do not publish — CWV regression detected (LCP crossed green→yellow)
-```
-
-*Why two preview URLs?* Shopify preview themes are inherently slower than the live site due to preview mode overhead. Comparing the live URL against a preview URL would always show false regressions. Instead, compare the **production theme in preview mode** (before) against the **development theme in preview mode** (after) for an apples-to-apples comparison that isolates the actual impact of your code changes.
 
 ### Google Sheet Mode
 
