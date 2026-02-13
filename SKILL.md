@@ -1,6 +1,6 @@
 ---
 name: core-web-vitals
-description: Run Google Core Web Vitals and PageSpeed audits against URLs. Use when asked to check site performance, CWV scores, LCP/CLS/INP/FCP/TTFB metrics, PageSpeed Insights, or bulk-audit URLs from a Google Sheet. Supports single URL, batch (multiple URLs), and Google Sheet modes with CrUX field data preferred, lab fallback, and browser scraping for errors.
+description: Run Google Core Web Vitals and PageSpeed audits against URLs. Use when asked to check site performance, CWV scores, LCP/CLS/INP/FCP/TTFB metrics, PageSpeed Insights, compare two sites, or bulk-audit URLs from a Google Sheet. Supports single URL, compare (two URLs side-by-side), batch (multiple URLs), and Google Sheet modes with CrUX field data preferred, lab fallback, and browser scraping for errors.
 ---
 
 # Core Web Vitals Skill
@@ -13,15 +13,18 @@ Audit website performance using Google's CrUX field data (real user metrics) and
 - `gog` CLI for Google Sheets operations (alternative to service account auth)
 - `agent-browser` CLI for web.dev scraping fallback
 
-## Three Modes
+## Four Modes
 
 ### 1. Single URL
 User provides one URL. Run the API, return formatted results inline.
 
-### 2. Batch (multiple URLs)
+### 2. Compare (two URLs)
+User provides two URLs to compare. Run both, show side-by-side with winner highlighted per metric.
+
+### 3. Batch (multiple URLs)
 User provides URLs separated by line breaks. Run each, return formatted table.
 
-### 3. Google Sheet
+### 4. Google Sheet
 User provides a Sheet URL. Read URLs from column A, write results to columns B-N with conditional formatting.
 
 ## Data Source Priority
@@ -44,7 +47,7 @@ User provides a Sheet URL. Read URLs from column A, write results to columns B-N
 
 CWV Assessment: FAST / AVERAGE / SLOW (from CrUX overall_category)
 
-## Mode 1: Single URL
+## Mode 1: Single URL (inline)
 
 ```bash
 curl -s "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=URL&strategy=mobile&category=performance&key=$GOOGLE_PAGESPEED_API_TOKEN"
@@ -67,7 +70,32 @@ Extract CrUX from `loadingExperience.metrics` (p75 values). Fall back to `lighth
 
 Use 🟢 (good), 🟡 (needs improvement), 🔴 (poor) based on thresholds above.
 
-## Mode 2: Batch URLs
+## Mode 2: Compare Two URLs (inline)
+
+Run Mode 1 for both URLs. Display side-by-side with winner per metric.
+
+**Format response as:**
+```
+⚔️ **CWV Comparison**
+
+| Metric | site-a.com | site-b.com | Winner |
+|--------|-----------|-----------|--------|
+| 📱 M-LCP | 2.1s 🟢 | 3.8s 🟡 | ✅ site-a |
+| 📱 M-CLS | 0.15 🟡 | 0.05 🟢 | ✅ site-b |
+| 📱 M-INP | 180ms 🟢 | 320ms 🟡 | ✅ site-a |
+| 📱 M-FCP | 1.5s 🟢 | 2.1s 🟡 | ✅ site-a |
+| 📱 M-TTFB | 0.6s 🟢 | 0.9s 🟡 | ✅ site-a |
+| 🖥️ D-LCP | 1.2s 🟢 | 2.0s 🟢 | ✅ site-a |
+| 🖥️ D-CLS | 0.08 🟢 | 0.02 🟢 | ✅ site-b |
+| ... | | | |
+
+**Overall: site-a.com wins 6/10 metrics**
+**CWV Assessment: site-a FAST ✅ vs site-b AVERAGE 🟡**
+```
+
+For numeric metrics, lower = better. Winner is the site with the better (lower) value. Tie = no winner shown.
+
+## Mode 3: Batch URLs
 
 Run Mode 1 for each URL. Format as a list of results. Use 4 parallel workers via ThreadPoolExecutor for speed.
 

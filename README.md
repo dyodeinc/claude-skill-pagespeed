@@ -5,6 +5,7 @@ Audit website performance using Google's Core Web Vitals (CrUX field data) and P
 ## Features
 
 - **Single URL** — Check one site, get formatted CWV results
+- **Compare** — Two URLs side-by-side with winner highlighted per metric
 - **Batch** — Paste multiple URLs, get results for all
 - **Google Sheet** — Point at a sheet with URLs in column A, auto-fills metrics with color-coded conditional formatting
 - **CrUX field data** preferred (real user metrics from Chrome UX Report)
