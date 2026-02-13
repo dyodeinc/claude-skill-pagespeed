@@ -86,6 +86,13 @@ def fetch(url, strategy, max_retries=3):
         f"?url={urllib.parse.quote(url, safe='')}&strategy={strategy}"
         f"&category=performance&key={API_KEY}"
     )
+    # Permanent errors that won't succeed on retry
+    PERMANENT_ERRORS = ["404", "403", "DNS", "ENOTFOUND", "CERT_", "SSL", "Name or service not known"]
+
+    def is_permanent(err_str):
+        return any(pe.lower() in err_str.lower() for pe in PERMANENT_ERRORS)
+
+    import time
     last_error = None
     for attempt in range(1, max_retries + 1):
         try:
@@ -99,10 +106,13 @@ def fetch(url, strategy, max_retries=3):
                 last_error = data.get("error", {}).get("message", "Unknown API error")
         except Exception as e:
             last_error = str(e)
+        if is_permanent(last_error):
+            print(f"  ⛔ Permanent error ({last_error}), skipping retries", file=sys.stderr)
+            return {"error": last_error}
         if attempt < max_retries:
-            wait = 5 * attempt
+            wait = 2 ** attempt  # Exponential backoff: 2s, 4s, 8s
             print(f"  ⚠️ Attempt {attempt} failed ({last_error}), retrying in {wait}s...", file=sys.stderr)
-            import time; time.sleep(wait)
+            time.sleep(wait)
     return {"error": last_error or "All retries failed"}
 
 def extract(data):

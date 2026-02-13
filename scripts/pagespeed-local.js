@@ -475,14 +475,33 @@ function printCompare(urlA, mobA, deskA, urlB, mobB, deskB) {
   console.log(`\n**Overall: ${leader} wins ${wins[leader]}/${total} metrics**`);
 }
 
-async function measureWithRetry(measurer, url, maxAttempts = 3, delayMs = 2000) {
+// Permanent errors that will never succeed on retry — don't waste time
+const PERMANENT_ERRORS = [
+  'ERR_NAME_NOT_RESOLVED',        // DNS failure — domain doesn't exist
+  'ERR_CONNECTION_REFUSED',        // Server not accepting connections
+  'ERR_CERT_AUTHORITY_INVALID',    // SSL certificate errors
+  'ERR_CERT_COMMON_NAME_INVALID',
+  'ERR_SSL_PROTOCOL_ERROR',
+  'ERR_ABORTED',                   // Navigation aborted (e.g., redirect loop)
+  'net::ERR_NAME_NOT_RESOLVED',
+  'net::ERR_CONNECTION_REFUSED',
+];
+
+function isPermanentError(error) {
+  const msg = error.message || '';
+  return PERMANENT_ERRORS.some(pe => msg.includes(pe));
+}
+
+async function measureWithRetry(measurer, url, maxAttempts = 3) {
   let lastError = null;
   
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       if (attempt > 1) {
-        console.error(`   Retry attempt ${attempt}/${maxAttempts}...`);
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        // Exponential backoff: 1s, 2s, 4s
+        const backoff = Math.pow(2, attempt - 1) * 1000;
+        console.error(`   Retry attempt ${attempt}/${maxAttempts} (waiting ${backoff / 1000}s)...`);
+        await new Promise(resolve => setTimeout(resolve, backoff));
       }
       
       const result = await measurer.measure(url);
@@ -495,6 +514,12 @@ async function measureWithRetry(measurer, url, maxAttempts = 3, delayMs = 2000) 
     } catch (error) {
       lastError = error;
       console.error(`   ❌ Attempt ${attempt}/${maxAttempts} failed: ${error.message}`);
+      
+      // Don't retry permanent errors — they'll never succeed
+      if (isPermanentError(error)) {
+        console.error(`   ⛔ Permanent error detected, skipping remaining retries`);
+        throw error;
+      }
       
       if (attempt === maxAttempts) {
         throw error;
