@@ -73,6 +73,22 @@ python3 scripts/pagespeed-single.py site1.com site2.com site3.com
 python3 scripts/pagespeed-single.py --api-key YOUR_KEY example.com
 ```
 
+### Shopify Theme QA Detection
+
+When comparing two URLs, detect if they share the same domain with a `?preview_theme_id=` parameter. If so, this is a **theme QA comparison** (not a competitor comparison). Adjust the output framing:
+
+- **Competitor compare** (different domains): "Who's faster?" — neutral winner per metric
+- **Theme QA** (same domain, one has preview_theme_id): "Did we regress?" — production is the baseline, flag any metric where the preview is worse
+
+For theme QA, use this framing:
+- Label URLs as **"Production"** and **"Preview"** (not domain names)
+- Flag regressions with ⚠️ ("LCP regressed 0.6s — investigate before publishing")
+- Flag improvements with 🎉 ("FCP improved 0.3s")
+- Summary: "X regressions, Y improvements, Z unchanged"
+- If ANY CWV metric crosses a threshold boundary (green→yellow, yellow→red), add a strong warning: "🚨 Do not publish — CWV regression detected"
+
+### Running Scripts
+
 The script auto-loads `.env` from the working directory (searching upward). **Run from the project root in a single Bash call:**
 
 ```bash
