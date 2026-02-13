@@ -10,7 +10,7 @@ Audit website performance using Google's CrUX field data (real user metrics) and
 ## Prerequisites
 
 - `GOOGLE_PAGESPEED_API_TOKEN` env var (Google PageSpeed Insights API key)
-- `gog` CLI for Google Sheets operations
+- `gog` CLI for Google Sheets operations (alternative to service account auth)
 - `agent-browser` CLI for web.dev scraping fallback
 
 ## Three Modes

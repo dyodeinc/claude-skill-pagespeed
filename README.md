@@ -43,8 +43,8 @@ Audit website performance using Google's Core Web Vitals (CrUX field data) and P
 4. Save the downloaded JSON file (e.g., `service-account.json`)
 5. **Share your Google Sheet** with the service account email (the `client_email` in the JSON) — give it **Editor** access
 
-**Option B: gog CLI (for OpenClaw/local environments)**
-- Install and authenticate [gog CLI](https://github.com/AriKimelman/gogcli)
+**Option B: gog CLI**
+- Install and authenticate [gog CLI](https://github.com/openclaw/gog) — a Google Workspace CLI for Gmail, Calendar, Drive, and Sheets
 - Use `--account your@email.com` instead of `--credentials`
 
 ### 3. Python 3.8+
