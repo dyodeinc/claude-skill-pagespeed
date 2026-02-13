@@ -54,6 +54,30 @@ No pip dependencies required — uses Python standard library only. Requires `op
 
 ## Usage
 
+### Example Prompts
+
+When this skill is installed, your AI agent will automatically use it when you ask about site performance:
+
+**Single URL:**
+- "Check the Core Web Vitals for dyode.com"
+- "How's the PageSpeed for shopify.com?"
+- "Run a CWV audit on rothys.com"
+
+**Compare two sites:**
+- "Compare the performance of skims.com vs rothys.com"
+- "Which site has better Core Web Vitals: allbirds.com or rothys.com?"
+
+**Batch (multiple URLs):**
+- "Check CWV for these sites:
+  dyode.com
+  skims.com
+  rothys.com
+  allbirds.com"
+
+**Google Sheet:**
+- "Run PageSpeed audits on all URLs in this sheet: https://docs.google.com/spreadsheets/d/abc123/edit"
+- "Bulk audit the URLs in column A of this spreadsheet: [sheet URL]"
+
 ### Google Sheet Mode
 
 Your Google Sheet must have URLs in **column A** starting at row 2 (row 1 = headers).
