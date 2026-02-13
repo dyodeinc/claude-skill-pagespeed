@@ -1,4 +1,4 @@
-# Core Web Vitals — OpenClaw Skill
+# Core Web Vitals — Claude Skill
 
 Audit website performance using Google's Core Web Vitals (CrUX field data) and PageSpeed Insights API. Works as a skill for Claude Code, OpenClaw, Codex, or any AI agent that supports SKILL.md.
 
@@ -11,6 +11,7 @@ Audit website performance using Google's Core Web Vitals (CrUX field data) and P
 - **Lab data** fallback when CrUX unavailable
 - **Browser scraping** fallback for API errors (loads web.dev via headless browser)
 - **Parallel processing** — 4 concurrent workers by default
+- **No pip dependencies** — Uses Python stdlib only
 
 ## Metrics
 
@@ -24,28 +25,51 @@ Audit website performance using Google's Core Web Vitals (CrUX field data) and P
 
 ## Prerequisites
 
-- `GOOGLE_PAGESPEED_API_TOKEN` environment variable ([get one here](https://console.cloud.google.com/apis/credentials))
-- [`gog` CLI](https://github.com/AriKimelman/gogcli) for Google Sheets read/write
-- `agent-browser` CLI for web.dev scraping fallback (optional)
-- Python 3.8+
+### 1. PageSpeed Insights API Key
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a project (or select existing)
+3. Enable the **PageSpeed Insights API**: [Enable here](https://console.cloud.google.com/apis/library/pagespeedonline.googleapis.com)
+4. Go to **APIs & Services → Credentials → Create Credentials → API Key**
+5. Set as environment variable: `export GOOGLE_PAGESPEED_API_TOKEN=your_key_here`
+
+### 2. Google Sheets Access (for Sheet mode)
+
+**Option A: Service Account (recommended for portability)**
+1. In Google Cloud Console, go to **IAM & Admin → Service Accounts**
+2. Click **Create Service Account**, give it a name, click **Done**
+3. Click the service account → **Keys → Add Key → Create new key → JSON**
+4. Save the downloaded JSON file (e.g., `service-account.json`)
+5. **Share your Google Sheet** with the service account email (the `client_email` in the JSON) — give it **Editor** access
+
+**Option B: gog CLI (for OpenClaw/local environments)**
+- Install and authenticate [gog CLI](https://github.com/AriKimelman/gogcli)
+- Use `--account your@email.com` instead of `--credentials`
+
+### 3. Python 3.8+
+
+No pip dependencies required — uses Python standard library only. Requires `openssl` CLI for service account JWT signing.
 
 ## Usage
 
 ### Google Sheet Mode
 
-Your Google Sheet must:
-- Have URLs in **column A** (starting at row 2, row 1 is headers)
-- Be **editable** by the Google account you specify
+Your Google Sheet must have URLs in **column A** starting at row 2 (row 1 = headers).
 
 ```bash
-# Run bulk scan
+# With service account
+python3 scripts/pagespeed-bulk.py SPREADSHEET_ID --credentials service-account.json
+
+# With gog CLI
 python3 scripts/pagespeed-bulk.py SPREADSHEET_ID --account you@example.com
 
 # Resume from a specific index
-python3 scripts/pagespeed-bulk.py SPREADSHEET_ID --account you@example.com --start 150
+python3 scripts/pagespeed-bulk.py SPREADSHEET_ID --credentials sa.json --start 150
 
 # Custom worker count
-python3 scripts/pagespeed-bulk.py SPREADSHEET_ID --account you@example.com --workers 6
+python3 scripts/pagespeed-bulk.py SPREADSHEET_ID --credentials sa.json --workers 6
+
+# Override API key
+python3 scripts/pagespeed-bulk.py SPREADSHEET_ID --credentials sa.json --api-key YOUR_KEY
 ```
 
 The script writes results to columns B–N:
@@ -64,23 +88,24 @@ The script writes results to columns B–N:
 | K | Desktop FCP (s) |
 | L | Desktop TTFB (s) |
 | M | Desktop CWV Assessment |
-| N | Data Source |
+| N | Data Source (Field/Lab/Web.dev/Error) |
 
 ### Retry Errors via Browser Scraping
 
-After the bulk scan, some URLs may show ERROR (API timeouts on heavy sites). Retry them by scraping web.dev:
+After the bulk scan, some URLs may show ERROR (API timeouts on heavy sites). Retry by scraping web.dev:
 
 ```bash
-python3 scripts/pagespeed-retry-browser.py SPREADSHEET_ID --account you@example.com
+python3 scripts/pagespeed-retry-browser.py SPREADSHEET_ID --credentials sa.json
 ```
 
-## How It Works
+*Note: Browser retry requires `agent-browser` CLI.*
 
-1. **API call** → Google PageSpeed Insights API v5 for each URL (mobile + desktop)
-2. **CrUX extraction** → Pulls real-user p75 field data from `loadingExperience.metrics`
-3. **Lab fallback** → If no CrUX data, extracts Lighthouse lab metrics
-4. **Sheet write** → Writes full row via Sheets API (single HTTP call per row)
-5. **Conditional formatting** → Applied via Sheets batchUpdate API using CWV thresholds
+## Performance
+
+- ~2.5 URLs/minute with 4 parallel workers
+- API rate limit: 25,000 requests/day, 400/100s (not the bottleneck)
+- Bottleneck is Google's Lighthouse analysis time (30-90s per URL per strategy)
+- 1,000 URLs ≈ 6-7 hours
 
 ## License
 
