@@ -15,13 +15,18 @@ Audit website performance using Google's CrUX field data (real user metrics) and
 
 ## First Run — Environment Setup
 
-Before running any PageSpeed commands, ensure the API key is available in the environment. If the user has a `.env` file in their project root with `GOOGLE_PAGESPEED_API_TOKEN`, load it:
+Before running any PageSpeed commands, load the API key. If the user has a `.env` file:
 
 ```bash
 export $(grep -v '^#' .env | xargs)
 ```
 
-Verify: `echo $GOOGLE_PAGESPEED_API_TOKEN` should output the key. If not set, ask the user to add it to their `.env` file or provide it inline via `--api-key`.
+Verify the key is set (do NOT echo the actual value):
+```bash
+[ -n "$GOOGLE_PAGESPEED_API_TOKEN" ] && echo "API key is set" || echo "API key missing"
+```
+
+**⚠️ NEVER echo, print, or display the API key value. Only check if it exists.**
 
 ## Four Modes
 
@@ -57,57 +62,25 @@ User provides a Sheet URL. Read URLs from column A, write results to columns B-N
 
 CWV Assessment: FAST / AVERAGE / SLOW (from CrUX overall_category)
 
-## Mode 1: Single URL (inline)
+## Modes 1-3: Single, Compare, and Batch
+
+All handled by `scripts/pagespeed-single.py`. The script auto-detects the mode based on URL count:
 
 ```bash
-curl -s "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=URL&strategy=mobile&category=performance&key=$GOOGLE_PAGESPEED_API_TOKEN"
+# Single URL
+python3 scripts/pagespeed-single.py example.com
+
+# Compare two URLs
+python3 scripts/pagespeed-single.py site-a.com site-b.com
+
+# Batch (3+ URLs)
+python3 scripts/pagespeed-single.py site1.com site2.com site3.com
+
+# With inline API key
+python3 scripts/pagespeed-single.py --api-key YOUR_KEY example.com
 ```
 
-Extract CrUX from `loadingExperience.metrics` (p75 values). Fall back to `lighthouseResult.audits` if no CrUX.
-
-**Format response as:**
-```
-🌐 **example.com** — CWV: FAST ✅
-
-📱 Mobile:
-  LCP: 1.8s 🟢 | CLS: 0.05 🟢 | INP: 120ms 🟢
-  FCP: 1.2s 🟢 | TTFB: 0.4s 🟢
-
-🖥️ Desktop:
-  LCP: 1.2s 🟢 | CLS: 0.02 🟢 | INP: 80ms 🟢
-  FCP: 0.8s 🟢 | TTFB: 0.3s 🟢
-```
-
-Use 🟢 (good), 🟡 (needs improvement), 🔴 (poor) based on thresholds above.
-
-## Mode 2: Compare Two URLs (inline)
-
-Run Mode 1 for both URLs. Display side-by-side with winner per metric.
-
-**Format response as:**
-```
-⚔️ **CWV Comparison**
-
-| Metric | site-a.com | site-b.com | Winner |
-|--------|-----------|-----------|--------|
-| 📱 M-LCP | 2.1s 🟢 | 3.8s 🟡 | ✅ site-a |
-| 📱 M-CLS | 0.15 🟡 | 0.05 🟢 | ✅ site-b |
-| 📱 M-INP | 180ms 🟢 | 320ms 🟡 | ✅ site-a |
-| 📱 M-FCP | 1.5s 🟢 | 2.1s 🟡 | ✅ site-a |
-| 📱 M-TTFB | 0.6s 🟢 | 0.9s 🟡 | ✅ site-a |
-| 🖥️ D-LCP | 1.2s 🟢 | 2.0s 🟢 | ✅ site-a |
-| 🖥️ D-CLS | 0.08 🟢 | 0.02 🟢 | ✅ site-b |
-| ... | | | |
-
-**Overall: site-a.com wins 6/10 metrics**
-**CWV Assessment: site-a FAST ✅ vs site-b AVERAGE 🟡**
-```
-
-For numeric metrics, lower = better. Winner is the site with the better (lower) value. Tie = no winner shown.
-
-## Mode 3: Batch URLs
-
-Run Mode 1 for each URL. Format as a list of results. Use 4 parallel workers via ThreadPoolExecutor for speed.
+The script outputs pre-formatted results with emoji indicators. Just run it and relay the output to the user. Do NOT write your own curl commands or inline Python — use the script.
 
 ## Mode 3: Google Sheet
 
