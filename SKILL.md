@@ -75,34 +75,40 @@ Run Mode 1 for each URL. Format as a list of results. Use 4 parallel workers via
 
 Use `scripts/pagespeed-bulk.py` in this skill directory.
 
+### Prerequisites
+- The Google Sheet **must be editable by the account** used (shared with edit permissions or owned)
+- Column A must contain URLs (starting at A2, A1 is header)
+
 ### Setup
-1. Extract spreadsheet ID from the Google Sheet URL
-2. Count total URLs: `gog sheets get SPREADSHEET_ID "A2:A10000" --account tim@dyode.com --plain | grep -c -v "^$"`
-3. Update `SPREADSHEET` constant in the script if needed
-4. Set headers B1:N1 individually (gog CLI concatenates multiple values into one cell):
+1. Extract spreadsheet ID from the Google Sheet URL (the long string between `/d/` and `/edit`)
+2. Determine the `--account` email (whichever Google account has edit access to the sheet)
+3. Set headers B1:N1 individually (gog CLI concatenates multiple values into one cell):
    - B1: M-LCP (s), C1: M-CLS, D1: M-INP (ms), E1: M-FCP (s), F1: M-TTFB (s), G1: M-CWV
    - H1: D-LCP (s), I1: D-CLS, J1: D-INP (ms), K1: D-FCP (s), L1: D-TTFB (s), M1: D-CWV
    - N1: Data Source
 
 ### Run
 ```bash
-# Full run (from beginning)
-nohup python3 -u scripts/pagespeed-bulk.py 0 > /tmp/pagespeed.log 2>&1 &
+# Full run
+nohup python3 -u scripts/pagespeed-bulk.py SPREADSHEET_ID --account EMAIL > /tmp/pagespeed.log 2>&1 &
 
 # Resume from index N
-nohup python3 -u scripts/pagespeed-bulk.py N >> /tmp/pagespeed.log 2>&1 &
+nohup python3 -u scripts/pagespeed-bulk.py SPREADSHEET_ID --account EMAIL --start N >> /tmp/pagespeed.log 2>&1 &
+
+# Custom worker count
+nohup python3 -u scripts/pagespeed-bulk.py SPREADSHEET_ID --account EMAIL --workers 6 > /tmp/pagespeed.log 2>&1 &
 ```
 
 ### Monitor
 ```bash
 tail -f /tmp/pagespeed.log
-gog sheets get SPREADSHEET_ID "B2:B10000" --account tim@dyode.com --plain | grep -c -v "^$"
+gog sheets get SPREADSHEET_ID "B2:B10000" --account EMAIL --plain | grep -c -v "^$"
 ```
 
 ### Retry Errors (browser scraping)
 After main run completes, use `scripts/pagespeed-retry-browser.py` for ERROR rows:
 ```bash
-python3 -u scripts/pagespeed-retry-browser.py > /tmp/pagespeed-retry.log 2>&1 &
+python3 -u scripts/pagespeed-retry-browser.py SPREADSHEET_ID --account EMAIL > /tmp/pagespeed-retry.log 2>&1 &
 ```
 
 ### Conditional Formatting

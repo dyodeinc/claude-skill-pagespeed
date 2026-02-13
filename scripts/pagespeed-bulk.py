@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 """PageSpeed Insights bulk scanner — parallel requests, CrUX field data."""
 
-import json, os, subprocess, sys, time, urllib.request, urllib.parse
+import json, os, subprocess, sys, time, urllib.request, urllib.parse, argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-SPREADSHEET = "13h8LYIVJTsoV_60YO4W6W4HdKGkyW34YwkpBj7r5cA0"
 API_KEY = os.environ["GOOGLE_PAGESPEED_API_TOKEN"]
-ACCOUNT = "tim@dyode.com"
 MAX_WORKERS = 4  # parallel URL processing
 
-def get_access_token():
+def get_access_token(account):
     creds = json.load(open("/home/node/.config/gogcli/credentials.json"))
-    r = subprocess.run(["gog", "auth", "tokens", "export", "tim@dyode.com", "--out", "/tmp/gog-tok.json"],
+    r = subprocess.run(["gog", "auth", "tokens", "export", account, "--out", "/tmp/gog-tok.json"],
                        capture_output=True, text=True)
     tok_data = json.load(open("/tmp/gog-tok.json"))
     data = urllib.parse.urlencode({
@@ -26,17 +24,21 @@ def get_access_token():
     os.remove("/tmp/gog-tok.json")
     return result["access_token"]
 
-ACCESS_TOKEN = get_access_token()
+# Globals set in main()
+SPREADSHEET = None
+ACCOUNT = None
+ACCESS_TOKEN = None
+SHEET_NAME = None  # First sheet name, detected at startup
 TOKEN_LOCK = __import__('threading').Lock()
 
 def refresh_token():
     global ACCESS_TOKEN
     with TOKEN_LOCK:
-        ACCESS_TOKEN = get_access_token()
+        ACCESS_TOKEN = get_access_token(ACCOUNT)
 
 def batch_write_row(row, values):
     global ACCESS_TOKEN
-    range_str = f"'domains_export (4)'!B{row}:N{row}"
+    range_str = f"'{SHEET_NAME}'!B{row}:N{row}" if SHEET_NAME else f"B{row}:N{row}"
     body = json.dumps({"range": range_str, "majorDimension": "ROWS", "values": [values]}).encode()
     url = (f"https://sheets.googleapis.com/v4/spreadsheets/{SPREADSHEET}/values/"
            f"{urllib.parse.quote(range_str)}?valueInputOption=RAW")
@@ -56,7 +58,7 @@ def batch_write_row(row, values):
 
 def sheet_read_urls():
     r = subprocess.run(
-        ["gog", "sheets", "get", SPREADSHEET, "A2:A1400", "--account", ACCOUNT, "--plain"],
+        ["gog", "sheets", "get", SPREADSHEET, "A2:A10000", "--account", ACCOUNT, "--plain"],
         capture_output=True, text=True, timeout=30
     )
     return [line.strip() for line in r.stdout.strip().split("\n") if line.strip()]
@@ -151,7 +153,34 @@ def process_url(i, url, total):
     return i, source
 
 def main():
-    start_idx = int(sys.argv[1]) if len(sys.argv) > 1 else 0
+    global SPREADSHEET, ACCOUNT, ACCESS_TOKEN
+    
+    parser = argparse.ArgumentParser(description="Bulk PageSpeed Insights scanner")
+    parser.add_argument("spreadsheet_id", help="Google Spreadsheet ID")
+    parser.add_argument("--account", required=True, help="Google account email for Sheets API")
+    parser.add_argument("--start", type=int, default=0, help="Start from URL index (0-based)")
+    parser.add_argument("--workers", type=int, default=4, help="Parallel workers")
+    args = parser.parse_args()
+    
+    SPREADSHEET = args.spreadsheet_id
+    ACCOUNT = args.account
+    ACCESS_TOKEN = get_access_token(ACCOUNT)
+    start_idx = args.start
+    
+    # Detect first sheet name
+    global SHEET_NAME
+    try:
+        r = subprocess.run(["gog", "sheets", "metadata", SPREADSHEET, "--account", ACCOUNT, "--json"],
+                          capture_output=True, text=True, timeout=15)
+        meta = json.loads(r.stdout)
+        SHEET_NAME = meta["sheets"][0]["properties"]["title"]
+        print(f"Sheet: {SHEET_NAME}", flush=True)
+    except:
+        SHEET_NAME = None
+    
+    global MAX_WORKERS
+    MAX_WORKERS = args.workers
+    
     urls = sheet_read_urls()
     total = len(urls)
     print(f"Found {total} URLs, starting from index {start_idx}, workers={MAX_WORKERS}", flush=True)

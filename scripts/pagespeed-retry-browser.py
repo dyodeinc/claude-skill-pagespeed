@@ -3,12 +3,16 @@
 
 import json, os, re, subprocess, sys, time, urllib.parse
 
-SPREADSHEET = "13h8LYIVJTsoV_60YO4W6W4HdKGkyW34YwkpBj7r5cA0"
-ACCOUNT = "tim@dyode.com"
+import argparse
+
+# Set via CLI args in main()
+SPREADSHEET = None
+ACCOUNT = None
+SHEET_NAME = None
 
 def get_access_token():
     creds = json.load(open("/home/node/.config/gogcli/credentials.json"))
-    subprocess.run(["gog", "auth", "tokens", "export", "tim@dyode.com", "--out", "/tmp/gog-tok.json"],
+    subprocess.run(["gog", "auth", "tokens", "export", ACCOUNT, "--out", "/tmp/gog-tok.json"],
                    capture_output=True)
     tok_data = json.load(open("/tmp/gog-tok.json"))
     import urllib.request
@@ -26,7 +30,7 @@ def get_access_token():
 
 def batch_write_row(row, values, token):
     import urllib.request as ur
-    range_str = f"'domains_export (4)'!B{row}:N{row}"
+    range_str = f"'{SHEET_NAME}'!B{row}:N{row}" if SHEET_NAME else f"B{row}:N{row}"
     body = json.dumps({"range": range_str, "majorDimension": "ROWS", "values": [values]}).encode()
     url = (f"https://sheets.googleapis.com/v4/spreadsheets/{SPREADSHEET}/values/"
            f"{urllib.parse.quote(range_str)}?valueInputOption=RAW")
@@ -38,7 +42,7 @@ def batch_write_row(row, values, token):
 def find_error_rows():
     """Find rows where column B or G (mobile CWV assessment) = ERROR."""
     r = subprocess.run(
-        ["gog", "sheets", "get", SPREADSHEET, "A2:N1400", "--account", ACCOUNT, "--plain"],
+        ["gog", "sheets", "get", SPREADSHEET, "A2:N10000", "--account", ACCOUNT, "--plain"],
         capture_output=True, text=True, timeout=30
     )
     errors = []
@@ -135,6 +139,25 @@ def scrape_webdev(url, strategy="mobile"):
         return None
 
 def main():
+    global SPREADSHEET, ACCOUNT, SHEET_NAME
+    
+    parser = argparse.ArgumentParser(description="Retry ERROR rows via web.dev browser scraping")
+    parser.add_argument("spreadsheet_id", help="Google Spreadsheet ID")
+    parser.add_argument("--account", required=True, help="Google account email for Sheets API")
+    args = parser.parse_args()
+    
+    SPREADSHEET = args.spreadsheet_id
+    ACCOUNT = args.account
+    
+    # Detect sheet name
+    try:
+        r = subprocess.run(["gog", "sheets", "metadata", SPREADSHEET, "--account", ACCOUNT, "--json"],
+                          capture_output=True, text=True, timeout=15)
+        meta = json.loads(r.stdout)
+        SHEET_NAME = meta["sheets"][0]["properties"]["title"]
+    except:
+        SHEET_NAME = None
+    
     print("Finding error rows...", flush=True)
     errors = find_error_rows()
     print(f"Found {len(errors)} error rows to retry via web.dev scraping", flush=True)
