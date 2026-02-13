@@ -59,24 +59,78 @@ No pip dependencies required — uses Python standard library only. Requires `op
 When this skill is installed, your AI agent will automatically use it when you ask about site performance:
 
 **Single URL:**
-- "Check the Core Web Vitals for dyode.com"
-- "How's the PageSpeed for shopify.com?"
-- "Run a CWV audit on rothys.com"
+> "Check the Core Web Vitals for rothys.com"
+
+```
+🌐 rothys.com — CWV: AVERAGE 🟡
+
+📱 Mobile:
+  LCP: 2.2s 🟢 | CLS: 0.00 🟢 | INP: 138ms 🟢
+  FCP: 2.0s 🟡 | TTFB: 0.5s 🟢
+
+🖥️ Desktop:
+  LCP: 2.7s 🟡 | CLS: 0.01 🟢 | INP: 73ms 🟢
+  FCP: 1.8s 🟢 | TTFB: 0.4s 🟢
+
+📊 Data: CrUX field (28-day p75)
+```
 
 **Compare two sites:**
-- "Compare the performance of skims.com vs rothys.com"
-- "Which site has better Core Web Vitals: allbirds.com or rothys.com?"
+> "Compare the performance of skims.com vs rothys.com"
+
+```
+⚔️ CWV Comparison: rothys.com vs skims.com
+
+| Metric       | rothys.com  | skims.com   | Winner     |
+|--------------|-------------|-------------|------------|
+| 📱 M-LCP    | 2.2s 🟢    | 2.1s 🟢    | ✅ skims   |
+| 📱 M-CLS    | 0.00 🟢    | 0.26 🔴    | ✅ rothys  |
+| 📱 M-INP    | 138ms 🟢   | 249ms 🟡   | ✅ rothys  |
+| 📱 M-FCP    | 2.0s 🟡    | 1.4s 🟢    | ✅ skims   |
+| 📱 M-TTFB   | 0.5s 🟢    | 0.8s 🟢    | ✅ rothys  |
+| 🖥️ D-LCP   | 2.7s 🟡    | 1.8s 🟢    | ✅ skims   |
+| 🖥️ D-CLS   | 0.01 🟢    | 0.03 🟢    | ✅ rothys  |
+| 🖥️ D-INP   | 73ms 🟢    | 95ms 🟢    | ✅ rothys  |
+| 🖥️ D-FCP   | 1.8s 🟢    | 1.2s 🟢    | ✅ skims   |
+| 🖥️ D-TTFB  | 0.4s 🟢    | 0.5s 🟢    | ✅ rothys  |
+
+Overall: rothys.com wins 6/10 metrics
+CWV: rothys AVERAGE 🟡 vs skims FAILED 🔴
+```
 
 **Batch (multiple URLs):**
-- "Check CWV for these sites:
-  dyode.com
-  skims.com
-  rothys.com
-  allbirds.com"
+> "Check CWV for these sites:
+> dyode.com
+> rothys.com
+> allbirds.com"
+
+```
+📊 Batch CWV Results
+
+| Site          | M-LCP | M-CLS | M-INP  | M-FCP | CWV     |
+|---------------|-------|-------|--------|-------|---------|
+| dyode.com     | 1.8s 🟢 | 0.02 🟢 | 95ms 🟢 | 1.2s 🟢 | FAST ✅  |
+| rothys.com    | 2.2s 🟢 | 0.00 🟢 | 138ms 🟢 | 2.0s 🟡 | AVG 🟡  |
+| allbirds.com  | 3.1s 🟡 | 0.08 🟢 | 210ms 🟡 | 2.4s 🟡 | SLOW 🔴 |
+
+📊 Data: CrUX field (28-day p75) | Mobile results shown
+```
 
 **Google Sheet:**
-- "Run PageSpeed audits on all URLs in this sheet: https://docs.google.com/spreadsheets/d/abc123/edit"
-- "Bulk audit the URLs in column A of this spreadsheet: [sheet URL]"
+> "Run PageSpeed audits on all URLs in this sheet: https://docs.google.com/spreadsheets/d/abc123/edit"
+
+```
+📋 Starting bulk CWV audit...
+  Sheet: "Sheet1" | 1,305 URLs found
+  Workers: 4 parallel | Est. time: ~8 hours
+  Auth: Service account (cwv-bot@project.iam.gserviceaccount.com)
+
+  Writing results to columns B-N with conditional formatting.
+  Progress updates every 25 URLs.
+
+  ✅ Complete: 1,247 processed | 42 CrUX field | 1,163 lab | 42 errors
+  🔄 Running browser retry on 42 error rows...
+```
 
 ### Google Sheet Mode
 
