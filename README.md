@@ -66,40 +66,46 @@ These metrics are calculated from synthetic testing and provide insights into pe
 
 *Not needed for local mode — skip to [Local Mode](#local-mode-no-api-needed) if you just want Puppeteer-based testing.*
 
-This is a **simple API key** (not a service account or OAuth credential). Generate one in under a minute:
+This is a **simple API key** (not a service account or OAuth credential). No JSON files, no IAM roles, no org policies to worry about.
 
-1. Go to [PageSpeed Insights → Get Started](https://developers.google.com/speed/docs/insights/v5/get-started) and click **"Get a Key"**
-   - Or manually: [Google Cloud Console](https://console.cloud.google.com/) → **APIs & Services → Credentials → Create Credentials → API Key**
-2. Enable the **PageSpeed Insights API** if prompted
-3. Copy the example env file and add your key:
+**Step-by-step:**
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) and create a project (or select an existing one)
+2. **Enable the PageSpeed Insights API:**
+   - Go to [API Library](https://console.cloud.google.com/apis/library) → search for **"PageSpeed Insights API"** → click it → click **Enable**
+   - Direct link: [Enable PageSpeed Insights API](https://console.cloud.google.com/apis/library/pagespeedonline.googleapis.com)
+3. **Create an API key:**
+   - Go to [APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials) → **Create Credentials** → **API Key**
+   - Copy the key
+4. **Add the key to your `.env` file:**
    ```bash
    cp .env.example .env
+   # Edit .env and replace your_api_key_here with your actual key
    ```
-4. Edit `.env` and replace `your_api_key_here` with your actual key
 5. The scripts auto-load `.env` — no manual export needed
 
-> **Note:** This is a standard API key, not a service account. No JSON key files, no IAM roles, no org policy issues.
+> **Tip:** You can also use the shortcut at [PageSpeed Insights → Get Started](https://developers.google.com/speed/docs/insights/v5/get-started) — click **"Get a Key"** to create a project + enable the API + generate a key all in one step.
 
 ### 2. Google Sheets Access (optional — only for Google Sheet batch mode)
 
-*Not required for single URL, compare, batch, or local modes.*
+*Skip this section unless you need to read/write results to a Google Sheet. Single URL, compare, batch, and local modes do NOT require this.*
 
-**Option A: gog CLI (recommended)**
-- Install and authenticate [gog CLI](https://github.com/openclaw/gog) — a Google Workspace CLI for Gmail, Calendar, Drive, and Sheets
-- Use `--account your@email.com` instead of `--credentials`
-
-**Option B: Service Account**
+**Option A: Service Account**
 1. In Google Cloud Console, go to **IAM & Admin → Service Accounts**
 2. Click **Create Service Account**, give it a name, click **Done**
 3. Click the service account → **Keys → Add Key → Create new key → JSON**
 4. Save the downloaded JSON file (e.g., `service-account.json`)
 5. **Share your Google Sheet** with the service account email (the `client_email` in the JSON) — give it **Editor** access
 
-> **⚠️ Note:** Some Google Workspace orgs block service account key creation (`iam.disableServiceAccountKeyCreation` policy). If you hit this, use Option A (gog CLI) or ask your admin to allow it.
+> **⚠️ Note:** Some Google Workspace orgs block service account key creation (`iam.disableServiceAccountKeyCreation` policy). If you hit this, ask your admin to allow it or use Option B.
+
+**Option B: gog CLI (alternative)**
+- If you have [gog](https://github.com/openclaw/gog) installed and authenticated, use `--account your@email.com` instead of `--credentials`
+- gog is a Google Workspace CLI — it handles OAuth for you
 
 ### 3. Python 3.8+
 
-No pip dependencies required — uses Python standard library only. Requires `openssl` CLI for service account JWT signing.
+No pip dependencies required — uses Python standard library only. Requires `openssl` CLI for service account JWT signing (only for Google Sheets service account auth).
 
 ## Usage
 
